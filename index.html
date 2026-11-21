@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gatekeep</title>
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: white;
+      overflow-y: hidden;
+    }
+
+    body {
+      overflow-x: auto;
+    }
+
+    #strip {
+      display: flex;
+      align-items: flex-start;
+      width: max-content;
+    }
+
+    #strip img {
+      display: block;
+      flex: none;
+      width: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="strip"></div>
+
+  <script>
+    const IMAGE_COUNT = 15;
+    const strip = document.getElementById("strip");
+
+    function addGates() {
+      const numbers = Array.from(
+        { length: IMAGE_COUNT },
+        (_, i) => i + 1
+      );
+
+      numbers.sort(() => Math.random() - 0.5);
+
+      numbers.forEach(number => {
+        const img = document.createElement("img");
+
+        img.src = `gates/gate${number}.jpg`;
+        img.alt = "Gate";
+        img.loading = "lazy";
+
+        img.style.height =
+          `${45 + Math.round(Math.random() * 40)}vh`;
+
+        strip.appendChild(img);
+      });
+    }
+
+    addGates();
+
+    window.addEventListener("scroll", () => {
+      const remaining =
+        document.documentElement.scrollWidth -
+        (window.scrollX + window.innerWidth);
+
+      if (remaining < 1500) {
+        addGates();
+      }
+    });
+
+    window.addEventListener("wheel", event => {
+      if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+        event.preventDefault();
+        window.scrollBy(event.deltaY, 0);
+      }
+    }, { passive: false });
+  </script>
+</body>
+</html>
+    
