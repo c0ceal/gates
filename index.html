@@ -35,51 +35,120 @@
 <body>
   <div id="strip"></div>
 
-  <script>
-    const IMAGE_COUNT = 15;
-    const strip = document.getElementById("strip");
+ 
+<script>
+  // Change this when you add more images.
+  const IMAGE_COUNT = 15;
 
-    function addGates() {
-      const numbers = Array.from(
+  // How many images to load at a time.
+  const BATCH_SIZE = 8;
+
+  // Maximum images kept on the page.
+  const MAX_VISIBLE = 40;
+
+  const strip = document.getElementById("strip");
+  const viewport = document.body;
+
+  let deck = [];
+  let previous = 0;
+  let loading = false;
+
+  // Shuffle every image before repeating the collection.
+  function nextGate() {
+    if (deck.length === 0) {
+      deck = Array.from(
         { length: IMAGE_COUNT },
         (_, i) => i + 1
       );
 
-      numbers.sort(() => Math.random() - 0.5);
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
 
-      numbers.forEach(number => {
-        const img = document.createElement("img");
-
-        img.src = `gate${number}.jpg`;
-        img.alt = "Gate";
-        img.loading = "lazy";
-
-        img.style.height =
-          `${45 + Math.round(Math.random() * 40)}vh`;
-
-        strip.appendChild(img);
-      });
+      // Avoid the same image at the boundary.
+      if (
+        deck.length > 1 &&
+        deck[deck.length - 1] === previous
+      ) {
+        [deck[0], deck[deck.length - 1]] =
+          [deck[deck.length - 1], deck[0]];
+      }
     }
 
-    addGates();
+    previous = deck.pop();
+    return previous;
+  }
 
-    window.addEventListener("scroll", () => {
-      const remaining =
-        document.documentElement.scrollWidth -
-        (window.scrollX + window.innerWidth);
+  // Load a small group of images.
+  async function addGates() {
+    if (loading) return;
+    loading = true;
 
-      if (remaining < 1500) {
-        addGates();
-      }
-    });
+    const images = [];
 
-    window.addEventListener("wheel", event => {
-      if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-        event.preventDefault();
-        window.scrollBy(event.deltaY, 0);
-      }
-    }, { passive: false });
-  </script>
+    for (let i = 0; i < BATCH_SIZE; i++) {
+      const img = new Image();
+
+      img.src = `gate${nextGate()}.jpg`;
+      img.alt = "Gate";
+
+      img.style.height =
+        `${45 + Math.round(Math.random() * 40)}vh`;
+
+      images.push(img);
+    }
+
+    // Wait until dimensions are available.
+    await Promise.all(
+      images.map(img => img.decode().catch(() => {}))
+    );
+
+    strip.append(...images);
+
+    // Remove gates far behind the viewer.
+    let removedWidth = 0;
+
+    while (strip.children.length > MAX_VISIBLE) {
+      const first = strip.firstElementChild;
+      removedWidth += first.getBoundingClientRect().width;
+      first.remove();
+    }
+
+    // Preserve the viewer's position.
+    if (removedWidth > 0) {
+      viewport.scrollLeft -= removedWidth;
+    }
+
+    loading = false;
+    checkScroll();
+  }
+
+  // Add more gates before reaching the end.
+  function checkScroll() {
+    const remaining =
+      viewport.scrollWidth -
+      viewport.scrollLeft -
+      viewport.clientWidth;
+
+    if (remaining < 2000 && !loading) {
+      addGates();
+    }
+  }
+
+  viewport.addEventListener("scroll", checkScroll);
+
+  // Allow vertical mouse scrolling to move horizontally.
+  window.addEventListener("wheel", event => {
+    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+      event.preventDefault();
+      viewport.scrollLeft += event.deltaY;
+    }
+  }, { passive: false });
+
+  // Begin the procession.
+  addGates();
+</script>
 </body>
 </html>
     
