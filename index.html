@@ -39,7 +39,7 @@
  
 <script>
   // Change this when you add more images.
-  const IMAGE_COUNT = 15;
+  const IMAGE_COUNT = 100;
 
   // How many images to load at a time.
   const BATCH_SIZE = 8;
@@ -91,7 +91,7 @@
     for (let i = 0; i < BATCH_SIZE; i++) {
       const img = new Image();
 
-      img.src = `gate${nextGate()}.jpg`;
+      img.src = `gate${nextGate()}.jpeg`;
       img.alt = "Gate";
 
       img.style.height =
